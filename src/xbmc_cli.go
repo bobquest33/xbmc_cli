@@ -22,14 +22,16 @@ type clientRequest struct {
 	Id     uint64                  `json:"id"`
 }
 
-func Connect(host, port string) (*rpc.Client, error) {
+func 
+
+func Connect(host, port string) (*rpc.Client) {
 	client, err := xbmcjson.Dial("tcp", host + ":" + port)
 	if err != nil {
 		fmt.Printf("ERROR(dial):%v", err)
 	} else {
 		fmt.Printf("connected to %v:%v\n", host, port)
 	}
-	return client, err
+	return client
 }
 
 func Request(c *rpc.Client, req *clientRequest, res string) (string, error){
@@ -102,10 +104,7 @@ func main() {
 	fmt.Printf("Sending %v... ", cmd)
 	switch cmd {
 	case "ping":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "JSONRPC.Ping"
 		// Returns string
@@ -113,30 +112,21 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "reboot":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "System.Reboot"
 		var res string
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "scan":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "VideoLibrary.Scan"
 		var res string
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "scanmusic":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "AudioLibrary.Scan"
 		req.Params["directory"] = music_path
@@ -144,10 +134,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "scantv":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "VideoLibrary.Scan"
 		//req.Params["directory"] = string
@@ -157,10 +144,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "scanmovies":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "VideoLibrary.Scan"
 		req.Params["directory"] = movie_path
@@ -169,10 +153,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "clean":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "VideoLibrary.Clean"
 		// Returns string
@@ -180,20 +161,14 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "cleanmusic":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "AudioLibrary.Clean"
 		var res string
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "sendtext":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		// takes next command line argument as input
 		// use quotes for strings on the command line
@@ -204,10 +179,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "notify":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		// takes next two command line arguments as title
 		// and message
@@ -219,10 +191,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "setvolume":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "Application.SetVolume"
 		req.Params["volume"], _ = strconv.Atoi(args[0])
@@ -231,10 +200,7 @@ func main() {
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "pause":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 		req.Method = "Player.PlayPause"
 		req.Params[""] = ""
@@ -244,10 +210,7 @@ func main() {
 			fmt.Printf("ERROR:%v\n", err)
 		}
 	case "suspend":
-		c, err := Connect(host, port)
-		if err != nil {
-			fmt.Printf("ERROR:%v\n",err)
-		}
+		c := Connect(host, port)
 		defer c.Close()
 	    req.Method = "System.Suspend"
 		var res string
