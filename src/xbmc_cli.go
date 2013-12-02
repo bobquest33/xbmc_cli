@@ -1,22 +1,17 @@
-// Copyright 2010 The Go Authors.  All rights reserved.
+// Copyright 2013 Joseph Bironas.  All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// All modifications from the original Copyright 2013 Joseph Bironas
 
 package main
 
 import (
 	"github.com/dlintw/goconf"
-	"encoding/hex"
-	"errors"
 	"fmt"
-	"log"
-	"net"
 	"net/rpc"
 	"os"
 	"strconv"
-	"strings"
 	"xbmcjson"
+	"xbmcwol"
 )
 
 
@@ -67,54 +62,13 @@ func Usage() {
 	fmt.Printf("  tv_path = smb://path/to/tv/\n")
 	fmt.Printf("  movie_path = /path/to/movies\n")
 	fmt.Printf("  music_path = /path/to/music\n")
+	fmt.Printf("  # these are required for WOL support\n")
+	fmt.Printf("  mac_addr = 00:01:23:45:67:89\n")
+	fmt.Printf("  bcast_addr = your.bcast.addr\n")
+	fmt.Printf("  bcasr_port = your.bcast.port\n")
 	os.Exit(0)
 }
 
-func SendMagicPacket(macAddr string, bcastAddr string, bcastPort string) error {
-
-	if len(macAddr) != (6*2 + 5) {
-		return errors.New("Invalid MAC Address String: " + macAddr)
-	}
-	
-	packet, err := constructMagicPacket(macAddr)
-	if err != nil {
-		return err
-	}
-
-	a, err := net.ResolveUDPAddr("udp", bcastAddr+":"+bcastPort)
-	if err != nil {
-		return err
-	}
-
-	c, err := net.DialUDP("udp", nil, a)
-	if err != nil {
-		return err
-	}
-
-	written, err := c.Write(packet)
-	c.Close()
-
-	// Packet must be 102 bytes in length
-	if written != 102 {
-		return err
-	}
-
-	return nil
-}
-
-func constructMagicPacket(macAddr string) ([]byte, error) {
-	macBytes, err := hex.DecodeString(strings.Join(strings.Split(macAddr, ":"), ""))
-	if err != nil {
-		log.Fatalln("Error Hex Decoding:", err)
-		return nil, err
-	}
-
-	b := []uint8{255, 255, 255, 255, 255, 255}
-	for i := 0; i < 16; i++ {
-		b = append(b, macBytes...)
-	}
-	return b, err
-}
 
 func main() {
 	homedir := os.ExpandEnv("$HOME")
@@ -131,6 +85,8 @@ func main() {
 	movie_path, _ := f.GetString("", "movie_path")
 	music_path, _ := f.GetString("", "music_path")
 	mac_addr, _ := f.GetString("", "mac_addr")
+	bcast_addr, _ := f.GetString("", "bcast_addr")
+	bcast_port, _ := f.GetString("", "bcast_port")
 
 	if len(os.Args) < 2 {
 		Usage()
@@ -283,9 +239,7 @@ func main() {
 		req.Method = "Player.PlayPause"
 		req.Params[""] = ""
 	case "wake":
-		bcastAddr := "192.168.2.255"
-		bcastPort := "9"
-		err := SendMagicPacket(mac_addr, bcastAddr, bcastPort)
+		err := xbmcwol.SendMagicPacket(mac_addr, bcast_addr, bcast_port)
 		if err != nil {
 			fmt.Printf("ERROR:%v\n", err)
 		}
