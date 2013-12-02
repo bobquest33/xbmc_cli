@@ -18,7 +18,7 @@ func SendMagicPacket(macAddr string, bcastAddr string, bcastPort string) error {
 	if len(macAddr) != (6*2 + 5) {
 		return errors.New("Invalid MAC Address String: " + macAddr)
 	}
-	
+
 	packet, err := constructMagicPacket(macAddr)
 	if err != nil {
 		return err

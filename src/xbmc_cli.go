@@ -5,8 +5,8 @@
 package main
 
 import (
-	"github.com/dlintw/goconf"
 	"fmt"
+	"github.com/dlintw/goconf"
 	"net/rpc"
 	"os"
 	"strconv"
@@ -14,18 +14,15 @@ import (
 	"xbmcwol"
 )
 
-
 type clientRequest struct {
 	Version string                 `json:"jsonrpc"`
-	Method string                  `json:"method"`
-	Params map[string] interface{} `json:"params"`
-	Id     uint64                  `json:"id"`
+	Method  string                 `json:"method"`
+	Params  map[string]interface{} `json:"params"`
+	Id      uint64                 `json:"id"`
 }
 
-func 
-
-func Connect(host, port string) (*rpc.Client) {
-	client, err := xbmcjson.Dial("tcp", host + ":" + port)
+func Connect(host, port string) *rpc.Client {
+	client, err := xbmcjson.Dial("tcp", host+":"+port)
 	if err != nil {
 		fmt.Printf("ERROR(dial):%v", err)
 	} else {
@@ -34,7 +31,7 @@ func Connect(host, port string) (*rpc.Client) {
 	return client
 }
 
-func Request(c *rpc.Client, req *clientRequest, res string) (string, error){
+func Request(c *rpc.Client, req *clientRequest, res string) (string, error) {
 	err := c.Call(req.Method, req.Params, &res)
 	if err != nil {
 		fmt.Printf("ERROR(call): %v\n", err)
@@ -71,18 +68,17 @@ func Usage() {
 	os.Exit(0)
 }
 
-
 func main() {
 	homedir := os.ExpandEnv("$HOME")
 
 	// Pull host/port from config file
 	f, err := goconf.ReadConfigFile(homedir + "/.xbmc_config")
 	if err != nil {
-		fmt.Printf("ERROR:%v\n",err)
+		fmt.Printf("ERROR:%v\n", err)
 		os.Exit(1)
 	}
 	host, _ := f.GetString("default", "host")
-        port, _ := f.GetString("default", "port")
+	port, _ := f.GetString("default", "port")
 	tv_path, _ := f.GetString("", "tv_path")
 	movie_path, _ := f.GetString("", "movie_path")
 	music_path, _ := f.GetString("", "music_path")
@@ -99,7 +95,7 @@ func main() {
 
 	req := &clientRequest{}
 	req.Version = "2.0"
-	req.Params = make(map[string] interface{})
+	req.Params = make(map[string]interface{})
 
 	fmt.Printf("Sending %v... ", cmd)
 	switch cmd {
@@ -175,7 +171,7 @@ func main() {
 		req.Method = "Input.SendText"
 		req.Params["text"] = args[0]
 		var res string
- 		// To be honest, I don't know what this returns
+		// To be honest, I don't know what this returns
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
 	case "notify":
@@ -184,7 +180,7 @@ func main() {
 		// takes next two command line arguments as title
 		// and message
 		req.Method = "GUI.ShowNotification"
- 		req.Params["title"] = args[0]
+		req.Params["title"] = args[0]
 		req.Params["message"] = args[1]
 		var res string
 		// Returns something other than a string
@@ -212,7 +208,7 @@ func main() {
 	case "suspend":
 		c := Connect(host, port)
 		defer c.Close()
-	    req.Method = "System.Suspend"
+		req.Method = "System.Suspend"
 		var res string
 		response, _ := Request(c, req, res)
 		fmt.Printf("%v\n", response)
