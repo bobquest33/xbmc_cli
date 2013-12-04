@@ -127,7 +127,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("ERROR: %v", err)
 	}
-	fmt.Printf("MyAddr is %v\n", myaddr)
 
 	// Pull host/port from config file
 	f, err := goconf.ReadConfigFile(homedir + "/.xbmc_config")
@@ -146,7 +145,9 @@ func main() {
 	bcast_port, _ := f.GetString("", "bcast_port")
 
 	bcast_addr, err := localBcast(myaddr)
-	fmt.Printf("Bcast is %v\n", bcast_addr)
+	if err != nil {
+		fmt.Printf("ERROR: can't pull the network broadcast address.")
+	}
 
 	cmd := os.Args[1]
 	args := os.Args[2:]
