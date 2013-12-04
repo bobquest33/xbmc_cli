@@ -106,7 +106,7 @@ func Usage() {
 	fmt.Printf("  music_path = /path/to/music\n")
 	fmt.Printf("  # these are required for WOL support\n")
 	fmt.Printf("  mac_addr = 00:01:23:45:67:89\n")
-	fmt.Printf("  bcasr_port = your.bcast.port\n")
+	fmt.Printf("  bcast_port = your.bcast.port\n")
 	os.Exit(0)
 }
 
