@@ -5,8 +5,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/dlintw/goconf"
+	"net"
 	"net/rpc"
 	"os"
 	"strconv"
@@ -14,11 +16,50 @@ import (
 	"xbmcwol"
 )
 
+
 type clientRequest struct {
 	Version string                 `json:"jsonrpc"`
 	Method  string                 `json:"method"`
 	Params  map[string]interface{} `json:"params"`
 	Id      uint64                 `json:"id"`
+}
+
+func localAddr() (net.Addr, error) {
+        interfaces, err := net.Interfaces()
+        if err != nil {
+                return nil, err
+        }
+        for _, i := range interfaces {
+                addrs, err := i.Addrs()
+                if err != nil {
+                        return nil, err
+                }
+                for _, addr := range addrs {
+                        ipnet, ok := addr.(*net.IPNet)
+                        if !ok {
+                                continue
+                        }
+                        v4 := ipnet.IP.To4()
+                        if v4 == nil || v4[0] == 127 { // loopback address
+                                continue
+                        }
+                        return addr, nil
+                }
+        }
+        return nil, errors.New("cannot find local IP address")
+}
+
+func localBcast(addr net.Addr) (net.IP, error) {
+	_, mask, _ := net.ParseCIDR(addr.String())
+	var bcast_byte []byte
+	bytes_ip := []byte(mask.IP)
+	bytes_mask := []byte(mask.Mask)
+	for y, oct := range bytes_ip {
+		res := oct | ^ bytes_mask[y]
+		bcast_byte = append(bcast_byte, res)
+	}
+	bcast_ip := net.IP(bcast_byte)
+	return bcast_ip, nil
 }
 
 func Connect(host, port string) *rpc.Client {
@@ -42,9 +83,11 @@ func Request(c *rpc.Client, req *clientRequest, res string) (string, error) {
 func Usage() {
 	fmt.Printf("usage: %v [command]\n\n", os.Args[0])
 	fmt.Printf("Supported commands are:\n")
-	fmt.Printf("  clean                    -- cleans the library of non-existing things.\n")
+	fmt.Printf("  clean                    -- cleans the library of " +
+		"non-existing things.\n")
 	fmt.Printf("  notify <title> <message> -- Send notification.\n")
-	fmt.Printf("  ping                     -- sends a jsonrpc ping to the specificed host\n")
+	fmt.Printf("  ping                     -- sends a jsonrpc ping " +
+		"to the specificed host\n")
 	fmt.Printf("  reboot                   -- Reboots the system\n")
 	fmt.Printf("  scantv                   -- Scans for new TV episodes\n")
 	fmt.Printf("  scanmovies               -- Scans for new movies.\n")
@@ -63,13 +106,28 @@ func Usage() {
 	fmt.Printf("  music_path = /path/to/music\n")
 	fmt.Printf("  # these are required for WOL support\n")
 	fmt.Printf("  mac_addr = 00:01:23:45:67:89\n")
-	fmt.Printf("  bcast_addr = your.bcast.addr\n")
 	fmt.Printf("  bcasr_port = your.bcast.port\n")
 	os.Exit(0)
 }
 
+/*
+ * Main Function
+*/
+
 func main() {
 	homedir := os.ExpandEnv("$HOME")
+
+	// Print usage if there are no arguments
+	if len(os.Args) < 2 {
+		Usage()
+	}
+
+	// Find out a little about myself
+	myaddr, err := localAddr()
+	if err != nil {
+		fmt.Printf("ERROR: %v", err)
+	}
+	fmt.Printf("MyAddr is %v\n", myaddr)
 
 	// Pull host/port from config file
 	f, err := goconf.ReadConfigFile(homedir + "/.xbmc_config")
@@ -79,16 +137,16 @@ func main() {
 	}
 	host, _ := f.GetString("default", "host")
 	port, _ := f.GetString("default", "port")
+
 	tv_path, _ := f.GetString("", "tv_path")
 	movie_path, _ := f.GetString("", "movie_path")
 	music_path, _ := f.GetString("", "music_path")
+
 	mac_addr, _ := f.GetString("", "mac_addr")
-	bcast_addr, _ := f.GetString("", "bcast_addr")
 	bcast_port, _ := f.GetString("", "bcast_port")
 
-	if len(os.Args) < 2 {
-		Usage()
-	}
+	bcast_addr, err := localBcast(myaddr)
+	fmt.Printf("Bcast is %v\n", bcast_addr)
 
 	cmd := os.Args[1]
 	args := os.Args[2:]
@@ -97,6 +155,7 @@ func main() {
 	req.Version = "2.0"
 	req.Params = make(map[string]interface{})
 
+	// Do some stuff
 	fmt.Printf("Sending %v... ", cmd)
 	switch cmd {
 	case "ping":
@@ -201,7 +260,7 @@ func main() {
 		req.Method = "Player.PlayPause"
 		req.Params[""] = ""
 	case "wake":
-		err := xbmcwol.SendMagicPacket(mac_addr, bcast_addr, bcast_port)
+		err := xbmcwol.SendMagicPacket(mac_addr, bcast_addr.String(), bcast_port)
 		if err != nil {
 			fmt.Printf("ERROR:%v\n", err)
 		}
